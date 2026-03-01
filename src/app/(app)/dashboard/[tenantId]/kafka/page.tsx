@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import KafkaLagChart from "../../../../../components/dashboard/KafkaLagChart";
-import MetricCard from "../../../../../components/dashboard/MetricCard";
+import KafkaLagChart from "~/components/dashboard/KafkaLagChart";
+import MetricCard from "~/components/dashboard/MetricCard";
 
-export default function KafkaPage({ params }: { params: { tenantId: string } }) {
-  const [data, setData] = useState<Array<{time: string; [k: string]: string | number}>>([]);
+export default async function KafkaPage({ params }: { params: Promise<{ tenantId: string }> }) {
+  const { tenantId } = await params;
+  const [data, setData] = useState<Array<{ time: string;[k: string]: string | number }>>([]);
   const topics = ["raw-logs", "enriched-logs", "anomaly-events", "dead-letter-queue"];
 
   useEffect(() => {

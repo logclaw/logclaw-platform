@@ -1,13 +1,14 @@
 import { auth } from "@clerk/nextjs/server";
-import { db } from "../../../../../lib/db/client";
-import { tenants } from "../../../../../lib/db/schema";
+import { db } from "~/lib/db/client";
+import { tenants } from "~/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Key } from "lucide-react";
 
-export default async function SettingsPage({ params }: { params: { tenantId: string } }) {
+export default async function SettingsPage({ params }: { params: Promise<{ tenantId: string }> }) {
+  const { tenantId } = await params;
   const { orgId } = await auth();
-  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, params.tenantId));
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
   if (!tenant || tenant.orgId !== orgId) notFound();
 
   const agentJwt = `lc_agent_${tenant.slug}_xxxxxxxxxxxxxxxxxxxx`;

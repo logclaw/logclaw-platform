@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import IntegrationToggle from "../../../../../components/dashboard/IntegrationToggle";
-import type { Integration } from "../../../../../components/dashboard/IntegrationToggle";
+import IntegrationToggle from "~/components/dashboard/IntegrationToggle";
+import type { Integration } from "~/components/dashboard/IntegrationToggle";
 
 const DEFAULT_INTEGRATIONS: Integration[] = [
   { platform: "pagerduty", enabled: true, lastTicket: "PD-10293", ticketCount: 47 },
@@ -12,7 +12,8 @@ const DEFAULT_INTEGRATIONS: Integration[] = [
   { platform: "opsgenie", enabled: false },
 ];
 
-export default function IntegrationsPage({ params }: { params: { tenantId: string } }) {
+export default async function IntegrationsPage({ params }: { params: Promise<{ tenantId: string }> }) {
+  const { tenantId } = await params;
   const [integrations, setIntegrations] = useState(DEFAULT_INTEGRATIONS);
 
   async function handleToggle(platform: string, enabled: boolean) {

@@ -1,5 +1,5 @@
-import AnomalyTimeline from "../../../../../components/dashboard/AnomalyTimeline";
-import type { AnomalyEvent } from "../../../../../components/dashboard/AnomalyTimeline";
+import AnomalyTimeline from "~/components/dashboard/AnomalyTimeline";
+import type { AnomalyEvent } from "~/components/dashboard/AnomalyTimeline";
 
 // Demo data — in production this comes from OpenSearch via the agent
 const DEMO_EVENTS: AnomalyEvent[] = [
@@ -8,7 +8,8 @@ const DEMO_EVENTS: AnomalyEvent[] = [
   { id: "3", score: 0.91, summary: "kafka raw-logs partition 7 lag: 48,231", service: "kafka-cluster", severity: "medium", timestamp: new Date(Date.now() - 1800000).toISOString() },
 ];
 
-export default function AnomaliesPage({ params }: { params: { tenantId: string } }) {
+export default async function AnomaliesPage({ params }: { params: Promise<{ tenantId: string }> }) {
+  const { tenantId } = await params;
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-2">Anomalies</h1>
