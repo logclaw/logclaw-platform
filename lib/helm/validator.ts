@@ -9,10 +9,12 @@ export const tenantValuesSchema = z.object({
     message: "Tenant ID must be lowercase alphanumeric with hyphens only",
   }),
   global: z.object({
+    tenantId: z.string().optional(),
     tenantName: z.string().min(1),
     storageClass: z.string().default("gp3"),
     storageClassHighThroughput: z.string().default("io2"),
     tier: tierEnum.default("ha"),
+    topologyKey: z.string().default("topology.kubernetes.io/zone"),
     objectStorage: z.object({
       provider: z.enum(["s3", "gcs", "azure"]).default("s3"),
       bucket: z.string().min(1),
@@ -20,11 +22,24 @@ export const tenantValuesSchema = z.object({
     }),
     secretStore: z.object({
       provider: z.enum(["aws", "gcp", "vault", "azure"]).default("aws"),
+      name: z.string().default("logclaw-secret-store"),
+      kind: z.enum(["ClusterSecretStore", "SecretStore"]).default("ClusterSecretStore"),
       region: z.string().default("us-east-1"),
     }),
+    kafkaBrokers: z.string().optional(),
+    kafkaTopics: z.object({
+      rawLogs: z.string().default("raw-logs"),
+      anomalies: z.string().default("anomalies"),
+      enriched: z.string().default("enriched-logs"),
+    }).optional(),
+    opensearchEndpoint: z.string().optional(),
     llm: z.object({
       provider: llmProviderEnum.default("disabled"),
       model: z.string().default("llama3.2:8b"),
+    }).default({}),
+    monitoring: z.object({
+      enabled: z.boolean().default(true),
+      prometheusNamespace: z.string().default("monitoring"),
     }).default({}),
   }),
   platform: z.object({ enabled: z.boolean().default(true) }).default({}),
@@ -44,13 +59,26 @@ export const tenantValuesSchema = z.object({
       }).default({}),
       servicenow: z.object({ enabled: z.boolean().default(false) }).default({}),
       opsgenie: z.object({ enabled: z.boolean().default(false) }).default({}),
-      zammad: z.object({ enabled: z.boolean().default(false) }).default({}),
+      zammad: z.object({
+        enabled: z.boolean().default(false),
+        groupName: z.string().default("SRE Incidents"),
+      }).default({}),
       slack: z.object({
         enabled: z.boolean().default(false),
         channel: z.string().optional(),
       }).default({}),
+      routing: z.object({
+        critical: z.array(z.string()).default([]),
+        high: z.array(z.string()).default([]),
+        medium: z.array(z.string()).default([]),
+        low: z.array(z.string()).default([]),
+      }).optional(),
+      anomaly: z.object({
+        minimumScore: z.number().min(0).max(1).default(0.85),
+      }).optional(),
     }).default({}),
   }).default({}),
+  zammad: z.object({ enabled: z.boolean().default(false) }).optional(),
 });
 
 export type TenantValues = z.infer<typeof tenantValuesSchema>;

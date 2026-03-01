@@ -51,18 +51,24 @@ export default function OnboardPage() {
     const criticalRouting = ["pagerduty", "jira", "zammad", "slack"].filter((p) => ticketing[p as keyof typeof ticketing] && (ticketing[p as keyof typeof ticketing] as any).enabled);
     const highRouting = ["jira", "zammad", "slack"].filter((p) => ticketing[p as keyof typeof ticketing] && (ticketing[p as keyof typeof ticketing] as any).enabled);
 
+    const ns = `logclaw-${tenantInfo.tenantId}`;
     const vals: Record<string, unknown> = {
       tenantId: tenantInfo.tenantId,
       clusterServer: "",
       global: {
         tenantName: tenantInfo.tenantName,
+        tenantId: tenantInfo.tenantId,
         storageClass: tenantInfo.cloudProvider === "aws" ? "gp3" : tenantInfo.cloudProvider === "gcp" ? "standard-rwo" : "managed-premium",
         storageClassHighThroughput: tenantInfo.cloudProvider === "aws" ? "io2" : tenantInfo.cloudProvider === "gcp" ? "premium-rwo" : "managed-premium",
         tier: tenantInfo.tier,
+        topologyKey: "topology.kubernetes.io/zone",
         objectStorage: { provider: tenantInfo.cloudProvider === "gcp" ? "gcs" : tenantInfo.cloudProvider === "azure" ? "azure" : "s3", bucket: tenantInfo.bucket, region: tenantInfo.region },
-        secretStore: { provider: tenantInfo.cloudProvider, region: tenantInfo.region },
+        secretStore: { provider: tenantInfo.cloudProvider, name: "logclaw-secret-store", kind: "ClusterSecretStore", region: tenantInfo.region },
+        kafkaBrokers: `logclaw-kafka-${tenantInfo.tenantId}-kafka-bootstrap.${ns}.svc.cluster.local:9093`,
+        kafkaTopics: { rawLogs: "raw-logs", anomalies: "anomalies", enriched: "enriched-logs" },
+        opensearchEndpoint: `https://logclaw-opensearch-${tenantInfo.tenantId}.${ns}.svc.cluster.local:9200`,
         llm: { provider: llm.provider, model: llm.model },
-        monitoring: { enabled: true },
+        monitoring: { enabled: true, prometheusNamespace: "monitoring" },
       },
       platform: { enabled: true },
       kafka: { enabled: components.kafka },
