@@ -18,7 +18,7 @@ const DEFAULT_TICKETING = {
   opsgenie: { enabled: false },
   zammad: { enabled: false, groupName: "SRE Incidents" },
   slack: { enabled: false, channel: "#sre-incidents" },
-  routing: { critical: [], high: [], medium: [], low: [] },
+  routing: { critical: [] as string[], high: [] as string[], medium: [] as string[], low: [] as string[] },
 };
 
 const DEFAULT_COMPONENTS = {
@@ -35,10 +35,10 @@ export default function OnboardPage() {
   const [step, setStep] = useState(1);
   const [gitInstallationId, setGitInstallationId] = useState<number | undefined>();
   const [repo, setRepo] = useState("");
-  const [tenantInfo, setTenantInfo] = useState({ tenantId: "", tenantName: "", tier: "ha" as const, cloudProvider: "aws" as const, bucket: "", region: "us-east-1" });
+  const [tenantInfo, setTenantInfo] = useState<{ tenantId: string; tenantName: string; tier: "ha" | "standard" | "ultra-ha"; cloudProvider: "aws" | "gcp" | "azure"; bucket: string; region: string }>({ tenantId: "", tenantName: "", tier: "ha", cloudProvider: "aws", bucket: "", region: "us-east-1" });
   const [components, setComponents] = useState(DEFAULT_COMPONENTS);
   const [ticketing, setTicketing] = useState(DEFAULT_TICKETING);
-  const [llm, setLlm] = useState({ provider: "ollama" as const, model: "llama3.2:8b" });
+  const [llm, setLlm] = useState<{ provider: "ollama" | "claude" | "openai" | "vllm" | "disabled"; model: string }>({ provider: "ollama", model: "llama3.2:8b" });
   const [prUrl, setPrUrl] = useState<string | undefined>();
   const [deploying, setDeploying] = useState(false);
   const [deployError, setDeployError] = useState<string | undefined>();
@@ -142,7 +142,7 @@ export default function OnboardPage() {
       {step === 1 && <Step1GitConnect installationId={gitInstallationId} repo={repo} onRepoSelect={(id, r) => { setGitInstallationId(id); setRepo(r); }} />}
       {step === 2 && <Step2TenantInfo values={tenantInfo} onChange={setTenantInfo} />}
       {step === 3 && <Step3Components enabled={components} onChange={(k, v) => setComponents((c) => ({ ...c, [k]: v }))} />}
-      {step === 4 && <Step4Ticketing config={ticketing} onChange={setTicketing} />}
+      {step === 4 && <Step4Ticketing config={ticketing} onChange={(c) => setTicketing({ pagerduty: c.pagerduty, jira: { enabled: c.jira.enabled, baseUrl: c.jira.baseUrl ?? "", projectKey: c.jira.projectKey ?? "" }, servicenow: c.servicenow, opsgenie: c.opsgenie, zammad: { enabled: c.zammad.enabled, groupName: c.zammad.groupName ?? "SRE Incidents" }, slack: { enabled: c.slack.enabled, channel: c.slack.channel ?? "#sre-incidents" }, routing: c.routing ?? { critical: [], high: [], medium: [], low: [] } })} />}
       {step === 5 && <Step5LLM config={llm} onChange={setLlm} />}
       {step === 6 && <Step6Review yaml={yaml} errors={[]} />}
       {step === 7 && <Step7Deploy prUrl={prUrl} loading={deploying} error={deployError} tenantId={tenantInfo.tenantId} />}
