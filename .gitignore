@@ -17,7 +17,7 @@ build/
 .env.production.local
 
 # Drizzle generated
-drizzle/
+# drizzle/ — migrations should be committed so the team can run them
 
 # Go build artifacts
 agent/logclaw-agent
