@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
-
+// edge runtime removed — using postgres-js (TCP) with Supabase locally
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/lib/db/client";
 import { tenants, onboardSessions } from "~/lib/db/schema";

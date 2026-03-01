@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
+// edge runtime removed — using postgres-js (TCP) with Supabase locally
 
 async function computeHmacHex(payload: string, secret: string): Promise<string> {
   const enc = new TextEncoder();
