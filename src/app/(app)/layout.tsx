@@ -1,5 +1,4 @@
-export const runtime = "edge";
-
+// Node.js runtime (default) — postgres-js requires TCP which is unavailable in edge runtime
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "../../../lib/db/client";
