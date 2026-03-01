@@ -1,23 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
-function verifyWebhookSignature(
+export const runtime = "edge";
+
+async function computeHmacHex(payload: string, secret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
+  return (
+    "sha256=" +
+    Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  const ae = new TextEncoder().encode(a);
+  const be = new TextEncoder().encode(b);
+  if (ae.length !== be.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ae.length; i++) diff |= ae[i] ^ be[i];
+  return diff === 0;
+}
+
+async function verifyWebhookSignature(
   payload: string,
   signature: string | null,
   secret: string
-): boolean {
+): Promise<boolean> {
   if (!signature) return false;
-  const hmac = crypto.createHmac("sha256", secret);
-  hmac.update(payload);
-  const digest = `sha256=${hmac.digest("hex")}`;
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(digest, "utf-8"),
-      Buffer.from(signature, "utf-8")
-    );
-  } catch {
-    return false;
-  }
+  const expected = await computeHmacHex(payload, secret);
+  return timingSafeEqual(expected, signature);
 }
 
 export async function POST(req: NextRequest) {
@@ -30,7 +49,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
   }
 
-  if (!verifyWebhookSignature(rawBody, signature, secret)) {
+  if (!(await verifyWebhookSignature(rawBody, signature, secret))) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 

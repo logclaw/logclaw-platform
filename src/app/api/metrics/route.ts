@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db/client";
-import { tenants, metrics } from "@/lib/db/schema";
-import { summarizeHealth, AgentMetricsPayload } from "@/lib/metrics/aggregator";
+
+export const runtime = "edge";
+
+import { db } from "~/lib/db/client";
+import { tenants, metrics } from "~/lib/db/schema";
+import { summarizeHealth, AgentMetricsPayload } from "~/lib/metrics/aggregator";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {

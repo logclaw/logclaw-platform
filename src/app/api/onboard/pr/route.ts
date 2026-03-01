@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "edge";
+
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db/client";
-import { tenants, onboardSessions } from "@/lib/db/schema";
-import { createTenantPR } from "@/lib/github-app/client";
+import { db } from "~/lib/db/client";
+import { tenants, onboardSessions } from "~/lib/db/schema";
+import { createTenantPR } from "~/lib/github-app/client";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 

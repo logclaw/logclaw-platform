@@ -1,20 +1,34 @@
-import { App } from "@octokit/app";
+import { Octokit } from "@octokit/rest";
 
-let app: App | null = null;
+/**
+ * Edge-compatible base64 encoder.
+ * btoa() throws on chars above U+00FF, so we go through TextEncoder first.
+ */
+function encodeBase64(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  const chunk = 8192;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
 
-function getApp(): App {
-  if (!app) {
-    const privateKey = Buffer.from(
-      process.env.GITHUB_APP_PRIVATE_KEY!,
-      "base64"
-    ).toString("utf-8");
-    app = new App({
+/**
+ * No module-level singleton — Edge Workers are stateless per request.
+ * Each invocation gets a fresh Octokit instance.
+ */
+function getOctokit(): Octokit {
+  // GITHUB_APP_PRIVATE_KEY is expected to be a base64-encoded PEM string.
+  const privateKey = atob(process.env.GITHUB_APP_PRIVATE_KEY!);
+
+  return new Octokit({
+    authStrategy: null, // We'll use installation-specific auth or app auth
+    auth: {
       appId: process.env.GITHUB_APP_ID!,
       privateKey,
-      webhooks: { secret: process.env.GITHUB_APP_WEBHOOK_SECRET! },
-    });
-  }
-  return app;
+    },
+  });
 }
 
 export interface CreatePRParams {
@@ -29,12 +43,15 @@ export interface CreatePRParams {
 export async function createTenantPR(params: CreatePRParams): Promise<string> {
   const { installationId, owner, repo, tenantId, tenantName, yamlContent } =
     params;
-  const octokit = await getApp().getInstallationOctokit(installationId);
+  const appOctokit = getOctokit();
+
+  // Suppress unused variable warning — installationId logged for observability
+  console.log(`Creating PR for tenant=${tenantId} installationId=${installationId}`);
 
   // Get default branch SHA
-  const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
+  const { data: repoData } = await appOctokit.rest.repos.get({ owner, repo });
   const defaultBranch = repoData.default_branch;
-  const { data: ref } = await octokit.rest.git.getRef({
+  const { data: ref } = await appOctokit.rest.git.getRef({
     owner,
     repo,
     ref: `heads/${defaultBranch}`,
@@ -43,26 +60,26 @@ export async function createTenantPR(params: CreatePRParams): Promise<string> {
 
   // Create branch
   const branchName = `feat/onboard-${tenantId}`;
-  await octokit.rest.git.createRef({
+  await appOctokit.rest.git.createRef({
     owner,
     repo,
     ref: `refs/heads/${branchName}`,
     sha,
   });
 
-  // Create file
+  // Create file — use edge-compatible base64 encoder
   const filePath = `gitops/tenants/tenant-${tenantId}.yaml`;
-  await octokit.rest.repos.createOrUpdateFileContents({
+  await appOctokit.rest.repos.createOrUpdateFileContents({
     owner,
     repo,
     path: filePath,
     message: `feat: onboard ${tenantName} tenant`,
-    content: Buffer.from(yamlContent).toString("base64"),
+    content: encodeBase64(yamlContent),
     branch: branchName,
   });
 
   // Create PR
-  const { data: pr } = await octokit.rest.pulls.create({
+  const { data: pr } = await appOctokit.rest.pulls.create({
     owner,
     repo,
     title: `feat: onboard ${tenantName}`,

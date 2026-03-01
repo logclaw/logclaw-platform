@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "edge";
+
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db/client";
-import { tenants, metrics } from "@/lib/db/schema";
+import { db } from "~/lib/db/client";
+import { tenants, metrics } from "~/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 // List tenants for the current org
